@@ -8,7 +8,6 @@ const productos = [
     { id: 7, nombre: "Silkwood House", precio: 96.75, imagen: "images/silkwoodhouse.jpg" }
 ];
 
-
 const carrito = JSON.parse(localStorage.getItem("carrito")) || [];
 
 function mostrarProductos() {
@@ -16,7 +15,7 @@ function mostrarProductos() {
     productos.forEach((producto) => {
         const div = document.createElement("div");
         div.innerHTML = `
-            <img src="${producto.imagen}" alt="${producto.nombre}" style="width: 100%; border-radius: 8px; margin-bottom: 10px;">
+            <img src="${producto.imagen}" alt="${producto.nombre}">
             <h2>${producto.nombre}</h2>
             <p>Precio: $${producto.precio.toFixed(2)}</p>
             <button onclick="agregarAlCarrito(${producto.id})">Agregar al carrito</button>
@@ -31,55 +30,55 @@ function agregarAlCarrito(id) {
 
     const productoExistente = carrito.find((item) => item.id === id);
     if (productoExistente) {
-    productoExistente.cantidad++;
-      productoExistente.subtotal = productoExistente.cantidad * productoExistente.precio;
+        productoExistente.cantidad++;
     } else {
-    carrito.push({ id: producto.id, nombre: producto.nombre, precio: producto.precio, cantidad: 1, subtotal: producto.precio });
+        carrito.push({ 
+            id: producto.id, 
+            nombre: producto.nombre, 
+            precio: producto.precio, 
+            cantidad: 1 
+        });
     }
+    actualizarCarrito();
+    Swal.fire({
+        title: "Producto agregado",
+        text: `${producto.nombre} ha sido añadido al carrito.`,
+        icon: "success",
+    });
+}
 
+function actualizarCarrito() {
+    carrito.forEach(producto => {
+        producto.subtotal = producto.cantidad * producto.precio;
+    });
     localStorage.setItem("carrito", JSON.stringify(carrito));
     actualizarCarritoUI();
-
-    Swal.fire({
-    title: "Producto agregado",
-    text: `${producto.nombre} ha sido añadido al carrito.`,
-    icon: "success",
-    });
 }
 
 function actualizarCarritoUI() {
     const contenedor = document.getElementById("carrito");
-    contenedor.innerHTML = "";
-    carrito.forEach((producto, index) => {
-    const div = document.createElement("div");
-    div.innerHTML = `
-        <h2>${producto.nombre}</h2>
-        <p>Cantidad: ${producto.cantidad}</p>
-        <p>Subtotal: $${producto.subtotal.toFixed(2)}</p>
-        <button onclick="eliminarDelCarrito(${index})">Eliminar</button>
-        <button onclick="modificarCantidad(${index}, 1)">+</button>
-        <button onclick="modificarCantidad(${index}, -1)">-</button>
-    `;
-    contenedor.appendChild(div);
-    });
+    contenedor.innerHTML = carrito.length 
+        ? carrito.map((producto, index) => `
+            <div>
+                <h2>${producto.nombre}</h2>
+                <p>Cantidad: ${producto.cantidad}</p>
+                <p>Subtotal: $${producto.subtotal.toFixed(2)}</p>
+                <button onclick="eliminarDelCarrito(${index})">Eliminar</button>
+                <button onclick="cambiarCantidad(${index}, 1)">+</button>
+                <button onclick="cambiarCantidad(${index}, -1)">-</button>
+            </div>
+        `).join("")
+        : "<p>El carrito está vacío.</p>";
 }
 
 function eliminarDelCarrito(index) {
     carrito.splice(index, 1);
-    localStorage.setItem("carrito", JSON.stringify(carrito));
-    actualizarCarritoUI();
+    actualizarCarrito();
 }
 
-function modificarCantidad(index, delta) {
-    carrito[index].cantidad += delta;
-
-    if (carrito[index].cantidad < 1) {
-    carrito[index].cantidad = 1;
-    }
-
-    carrito[index].subtotal = carrito[index].cantidad * carrito[index].precio;
-    localStorage.setItem("carrito", JSON.stringify(carrito));
-    actualizarCarritoUI();
+function cambiarCantidad(index, delta) {
+    carrito[index].cantidad = Math.max(1, carrito[index].cantidad + delta); // Evita cantidades menores a 1
+    actualizarCarrito();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
